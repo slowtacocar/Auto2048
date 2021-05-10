@@ -43,18 +43,16 @@ AutoInputManager.prototype.getDirection = function (grid) {
 };
 
 AutoInputManager.prototype.testDirection = function (grid, direction, score, depth) {
-  if (depth > 3) return 0;
+  if (depth > 6) return 0;
   const testGameManager = new GameManager(4, FakeInputManager, FakeActuator, FakeStorageManager);
+  testGameManager.addRandomTile = function () { };
   testGameManager.grid = grid;
   testGameManager.score = score;
   testGameManager.move(direction);
   let maxScore = testGameManager.score;
   for (let i = 0; i < 4; i++) {
-    let total = 0;
-    for (let j = 0; j < 5; j++) {
-      total += this.testDirection(this.copyGrid(testGameManager.grid.cells), i, testGameManager.score, depth + 1);
-    }
-    if (total / 10 > maxScore) {
+    const score = this.testDirection(this.copyGrid(testGameManager.grid.cells), i, testGameManager.score, depth + 1);
+    if (score > maxScore) {
       maxScore = score;
     }
   }
