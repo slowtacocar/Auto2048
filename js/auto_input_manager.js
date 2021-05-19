@@ -13,7 +13,7 @@ function AutoInputManager() {
 
 AutoInputManager.prototype.begin = function (gameManager) {
   this.gameManager = gameManager;
-  window.requestAnimationFrame(this.nextFrame.bind(this));
+  window.setInterval(this.move.bind(this), 0);
 };
 
 AutoInputManager.prototype.copyGrid = function (grid) {
@@ -29,39 +29,61 @@ AutoInputManager.prototype.copyGrid = function (grid) {
   return newGrid;
 };
 
-AutoInputManager.prototype.getDirection = function (grid) {
-  let maxScore = 0;
-  let ret = Math.floor(Math.random() * 4);
-  for (let i = 0; i < 4; i++) {
-    const score = this.testDirection(this.copyGrid(grid), i, 0, 0);
-    if (score > maxScore) {
-      maxScore = score;
-      ret = i;
+AutoInputManager.prototype.isGridEqual = function (oldGrid, newGrid) {
+  for (let x = 0; x < 4; x++) {
+    for (let y = 0; y < 4; y++) {
+      if ((oldGrid.cells[x][y] !== null || newGrid.cells[x][y] !== null) && ((oldGrid.cells[x][y] === null) !== (newGrid.cells[x][y] === null) || oldGrid.cells[x][y].value !== newGrid.cells[x][y].value)) return false;
     }
   }
-  return ret;
+  return true;
 };
 
-AutoInputManager.prototype.testDirection = function (grid, direction, score, depth) {
-  if (depth > 6) return 0;
-  const testGameManager = new GameManager(4, FakeInputManager, FakeActuator, FakeStorageManager);
-  testGameManager.addRandomTile = function () { };
-  testGameManager.grid = grid;
-  testGameManager.score = score;
-  testGameManager.move(direction);
-  let maxScore = testGameManager.score;
-  for (let i = 0; i < 4; i++) {
-    const score = this.testDirection(this.copyGrid(testGameManager.grid.cells), i, testGameManager.score, depth + 1);
-    if (score > maxScore) {
-      maxScore = score;
+AutoInputManager.prototype.testDirection = function (grid, depth) {
+  if (depth > 1) {
+    let score = 0;
+    for (let x = 0; x < 4; x++) {
+      for (let y = 0; y < 4; y++) {
+        if (grid.cells[x][y]) {
+          if (y % 2 === 0) score += (4 * y + 3 - x) * grid.cells[x][y].value;
+          else score += (4 * y + x) * grid.cells[x][y].value;
+        }
+      }
+    }
+    return score;
+  }
+  let maxScore = 0;
+  for (let i = 1; i < 4; i++) {
+    const testGameManager = new GameManager(4, FakeInputManager, FakeActuator, FakeStorageManager);
+    testGameManager.addRandomTile = function () { };
+    testGameManager.grid = this.copyGrid(grid);
+    testGameManager.move(i);
+    if (!this.isGridEqual(grid, testGameManager.grid)) {
+      const score = this.testDirection(testGameManager.grid, depth + 1);
+      if (score > maxScore) {
+        maxScore = score;
+      }
     }
   }
   return maxScore;
 };
 
-AutoInputManager.prototype.nextFrame = function () {
-  this.emit("move", this.getDirection(this.gameManager.grid));
-  window.requestAnimationFrame(this.nextFrame.bind(this));
+AutoInputManager.prototype.move = function () {
+  let maxScore = 0;
+  let ret = 0;
+  for (let i = 1; i < 4; i++) {
+    const testGameManager = new GameManager(4, FakeInputManager, FakeActuator, FakeStorageManager);
+    testGameManager.grid = this.copyGrid(this.gameManager.grid);
+    testGameManager.addRandomTile = function () { };
+    testGameManager.move(i);
+    if (!this.isGridEqual(this.gameManager.grid, testGameManager.grid)) {
+      const score = this.testDirection(testGameManager.grid, 0);
+      if (score > maxScore) {
+        maxScore = score;
+        ret = i;
+      }
+    }
+  }
+  this.emit("move", ret);
 };
 
 AutoInputManager.prototype.on = function (event, callback) {
