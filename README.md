@@ -1,5 +1,5 @@
-# Auto2048
-A 2048 fork that plays itself!
+# Otto
+Otto: a robot that plays 2048 Otto-matically!
 
 2048 was created by Gabriele Cirulli. [Play it here!](http://gabrielecirulli.github.io/2048/)
 
