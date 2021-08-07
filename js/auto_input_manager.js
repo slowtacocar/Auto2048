@@ -115,12 +115,12 @@ AutoInputManager.prototype.move = function () {
   } else {
     this.emit("move", ret);
   }
-  /*if (this.gameManager.over) {
+  if (this.gameManager.over) {
     console.log(this.gameManager.score)
     this.emit("restart");
   } else if (this.gameManager.won) {
     this.emit("keepPlaying");
-  }*/
+  }
 };
 
 AutoInputManager.prototype.on = function (event, callback) {
