@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: otto
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otto
+  namespace: otto
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: otto
+  template:
+    metadata:
+      labels:
+        app: otto
+    spec:
+      containers:
+      - name: nginx
+        image: cme-harbor.int.bobbygeorge.dev/otto/otto:1
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otto
+  namespace: otto
+spec:
+  ipFamilyPolicy: PreferDualStack
+  selector:
+    app: otto
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: otto
+  namespace: otto
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - otto.bobbygeorge.dev
+    secretName: otto-bobbygeorge-dev
+  rules:
+  - host: otto.bobbygeorge.dev
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: otto
+            port: 
+              number: 80
